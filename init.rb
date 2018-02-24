@@ -36,6 +36,7 @@ class Init
    include KeyboardFFI
 
    def create_players
+     puts 'creating player 2'
      mouse_reset
      sleep 0.5
      MouseFFI.move(1100, 500)
@@ -49,6 +50,7 @@ class Init
    end
 
    def create_room
+
      mouse_reset
      sleep 0.1
 
@@ -56,7 +58,7 @@ class Init
      MouseFFI.move(1400, 704)
      sleep 0.5
      MouseFFI.left_click
-     sleep
+     sleep 0.5
 
      KeyboardFFI.type('room')
      KeyboardFFI.type([:return])
@@ -67,6 +69,7 @@ class Init
    end
 
    def create_main_player
+     puts 'creating main player'
      mouse_reset
      MouseFFI.move(1650, 300)
      sleep 0.5
@@ -103,6 +106,7 @@ class Init
    end
 
    def start_game
+     puts 'starting the game'
      mouse_reset
      sleep 0.5
      MouseFFI.move(1400, 450)
@@ -110,13 +114,112 @@ class Init
      MouseFFI.left_click
    end
 
-   def run_ai
-     capture_all
-     game_field
-     field = image = ChunkyPNG::Image.from_file('field.png')
-     
-     binding.pry
+   def get_init_position
+     image = ChunkyPNG::Image.from_file('field.png')
 
+
+     count_x = {}
+     pos_x = 0
+
+     count_y = {}
+     pos_y = 0
+     # Searching Player init position.
+     (0..image.width).each do |x|
+       (0..image.height).each do |y|
+         # puts "searching pixel on #{x}/#{y}"
+         pixel = image.get_pixel(x, y)
+          if pixel == 4278190335
+            count_x[x] = count_x.fetch(x, 0) + 1
+            count_y[y] = count_y.fetch(y, 0) + 1
+          end
+       end
+     end
+
+     max_pixels_x = count_x.values.max
+     max_pixels_y = count_y.values.max
+
+
+     positions_x = []
+     count_x.each do |k,v|
+       if (v == max_pixels_x)
+         positions_x << k
+       end
+     end
+
+     positions_y = []
+     count_y.each do |k,v|
+       if (v == max_pixels_y)
+         positions_y << k
+       end
+     end
+
+     # Now in positions_x and positions_y are all pixel coordinates of the init circle of the player
+
+     # get correct pixels
+     beginning = [ positions_x.sort[positions_x.size / 2], positions_y.sort[positions_y.size / 2] ]
+     puts "extracted beginning pixels of player: #{beginning}"
+     beginning
+   end
+
+   def run_ai
+     beginning_x, beginning_y = get_init_position
+
+
+     binding.pry
+     # seach now the angle arrow within 56px of the middle. skip the size of the circle itself (10px from beginning)
+     # check belov half
+     image = ChunkyPNG::Image.from_file('field.png')
+
+     count_x = {}
+     pos_x = 0
+
+     count_y = {}
+     pos_y = 0
+
+     (( beginning_x - 56)..(beginning_x + 56)).each do |x|
+       ((beginning_y - 56)..(beginning_x + 56)).each do |y|
+         if (beginning_x +10 < x && beginning_x + 10 < x && beginning_y + 10 )
+         # puts "searching pixel on #{x}/#{y}"
+         pixel = image.get_pixel(x, y)
+          if pixel == 4278190335
+            count_x[x] = count_x.fetch(x, 0) + 1
+            count_y[y] = count_y.fetch(y, 0) + 1
+          end
+       end
+     end
+
+     max_pixels_x = count_x.values.max
+     max_pixels_y = count_y.values.max
+
+
+     positions_x = []
+     count_x.each do |k,v|
+       if (v == max_pixels_x)
+         positions_x << k
+       end
+     end
+
+     positions_y = []
+     count_y.each do |k,v|
+       if (v == max_pixels_y)
+         positions_y << k
+       end
+     end
+
+     binding.pry
+   end
+
+   def user_created?
+     `./boxcutter/boxcutter.exe -f -c -100,120,-75,150 player.png`
+    image = ChunkyPNG::Image.from_file('player.png')
+    # Check if there is a lot of red in the second line "FF0000FF" (red) = 4278190335
+    line = image.row(1)
+    (0...13).each do |index|
+      return false unless line[index] == 4278190335
+    end
+
+    puts 'player exists'
+    true
    end
 
    def capture_all
@@ -128,17 +231,21 @@ class Init
    end
 
    def main_loop
-     # require 'pry'; binding.pry
+     unless (user_created?)
+       create_main_player
+     end
 
-     # create_main_player
      # create_room
      # create_players
      # start_game
-     run_ai
+     # capture_all
+     # game_field
+     # run_ai
      binding.pry
    end
  end
 end
 
 
-Init::main_loop
+# Init::main_loop
+Init::run_ai
