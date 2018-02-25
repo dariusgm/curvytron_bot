@@ -161,13 +161,7 @@ class Init
      beginning
    end
 
-   def run_ai
-     beginning_x, beginning_y = get_init_position
-
-
-     binding.pry
-     # seach now the angle arrow within 56px of the middle. skip the size of the circle itself (10px from beginning)
-     # check belov half
+   def get_direction(beginning_x, beginning_y)
      image = ChunkyPNG::Image.from_file('field.png')
 
      count_x = {}
@@ -176,14 +170,16 @@ class Init
      count_y = {}
      pos_y = 0
 
-     (( beginning_x - 56)..(beginning_x + 56)).each do |x|
+     # seach now the angle arrow within 56px of the middle. skip the size of the circle itself (10px from beginning_x and beginning_y)
+     ((beginning_x - 56)..(beginning_x + 56)).each do |x|
        ((beginning_y - 56)..(beginning_x + 56)).each do |y|
-         if (beginning_x +10 < x && beginning_x + 10 < x && beginning_y + 10 )
+         if (beginning_x - 10 < x && beginning_x + 10 < x && beginning_y - 10 < y  && beginning_y + 10)
          # puts "searching pixel on #{x}/#{y}"
-         pixel = image.get_pixel(x, y)
-          if pixel == 4278190335
-            count_x[x] = count_x.fetch(x, 0) + 1
-            count_y[y] = count_y.fetch(y, 0) + 1
+           pixel = image.get_pixel(x, y)
+            if pixel == 4278190335
+              count_x[x] = count_x.fetch(x, 0) + 1
+              count_y[y] = count_y.fetch(y, 0) + 1
+            end
           end
        end
      end
@@ -206,7 +202,21 @@ class Init
        end
      end
 
+     direction = [ positions_x.sort[positions_x.size / 2], positions_y.sort[positions_y.size / 2] ]
+   end
+
+   def run_ai
+     beginning_x, beginning_y = get_init_position
+     direction_x, direction_y = get_direction(beginning_x, beginning_y)
+
+     # http://onlinemschool.com/math/library/vector/angl/
+     upperpart = beginning_x * direction_x + beginning_y * direction_y
+     lowerpart = Math.sqrt((beginning_x**2)+(beginning_y**2))*Math.sqrt((direction_x**2) + (direction_y**2))
+     # calculate angle
+     angle = upperpart / lowerpart
      binding.pry
+
+
    end
 
    def user_created?
